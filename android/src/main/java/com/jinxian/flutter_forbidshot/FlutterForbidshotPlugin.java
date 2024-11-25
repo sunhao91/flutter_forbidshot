@@ -1,47 +1,87 @@
 package com.jinxian.flutter_forbidshot;
 
+import android.app.Activity;
 import android.content.Context;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.WindowManager;
 import android.media.AudioManager;
 
+import androidx.annotation.NonNull;
+
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 /** FlutterForbidshotPlugin */
-public class FlutterForbidshotPlugin implements MethodCallHandler {
-  private Registrar _registrar;
-  private FlutterForbidshotPlugin(Registrar registrar){
-    this._registrar = registrar;
+public class FlutterForbidshotPlugin implements MethodCallHandler, FlutterPlugin, ActivityAware {
+
+  private MethodChannel methodCall;
+  private Activity activity;
+
+  @Override
+  public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+    methodCall = new MethodChannel(binding.getBinaryMessenger(), "flutter_forbidshot");
+    methodCall.setMethodCallHandler(this);
   }
-  /** Plugin registration. */
-  public static void registerWith(Registrar registrar) {
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_forbidshot");
-    channel.setMethodCallHandler(new FlutterForbidshotPlugin(registrar));
+
+  @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    methodCall.setMethodCallHandler(null);
+  }
+
+  @Override
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+    activity = binding.getActivity();
+  }
+
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+    onDetachedFromActivity();
+  }
+
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+    onAttachedToActivity(binding);
+  }
+
+  @Override
+  public void onDetachedFromActivity() {
+    activity = null;
   }
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    if (call.method.equals("setOn")) {
-      _registrar.activity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-    } else if(call.method.equals("setOff")){
-      _registrar.activity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-    } else if(call.method.equals("volume")){
-      result.success(getVolume());
-    } else if(call.method.equals("setVolume")){
-      double volume = call.argument("volume");
-      setVolume(volume);
-      result.success(null);
+    switch (call.method) {
+      case "setOn":
+        if (activity != null && activity.getWindow() != null) {
+          activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        }
+        break;
+      case "setOff":
+        if (activity != null && activity.getWindow() != null) {
+          activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        }
+        break;
+      case "volume":
+        result.success(getVolume());
+        break;
+      case "setVolume":
+        double volume = call.argument("volume");
+        setVolume(volume);
+        result.success(null);
+        break;
     }
   }
 
   AudioManager audioManager;
   private float getVolume() {
     if (audioManager == null) {
-      audioManager = (AudioManager) _registrar.activity().getSystemService(Context.AUDIO_SERVICE);
+      audioManager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
     }
     float max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
     float current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);

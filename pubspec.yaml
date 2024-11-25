@@ -1,11 +1,11 @@
 name: flutter_forbidshot
 description: A new Flutter plugin.
-version: 0.0.2
-author: qq326646683<326646683@qq.com>
+version: 1.0.4
 homepage: https://github.com/qq326646683/flutter_forbidshot
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ^3.5.4
+  flutter: '>=1.12.13+hotfix.6'
 
 dependencies:
   flutter:
@@ -25,8 +25,12 @@ flutter:
   # be modified. They are used by the tooling to maintain consistency when
   # adding or updating assets for this project.
   plugin:
-    androidPackage: com.jinxian.flutter_forbidshot
-    pluginClass: FlutterForbidshotPlugin
+    platforms:
+      android:
+        package: com.jinxian.flutter_forbidshot
+        pluginClass: FlutterForbidshotPlugin
+      ios:
+        pluginClass: FlutterForbidshotPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
